@@ -1,0 +1,99 @@
+version: "3"
+
+networks:
+  consul_network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.1.42.0/16
+
+services:
+  # Consul Cluster
+  consul_s1:
+    container_name: consul_s1
+    image: consul
+    command: "agent -config-file=/consul/config/consul_s1.json"
+    volumes:
+      - ./consul_server/consul_s1.json:/consul/config/consul_s1.json
+      - ./consul_server/data_s1:/consul/data
+    networks:
+      consul_network:
+        ipv4_address: 10.1.42.101
+    ports:
+      - "8500:8500"
+
+  consul_s2:
+    container_name: consul_s2
+    image: consul
+    command: "agent -config-file=/consul/config/consul_s2.json"
+    volumes:
+      - ./consul_server/consul_s2.json:/consul/config/consul_s2.json
+      - ./consul_server/data_s2:/consul/data
+    networks:
+      consul_network:
+        ipv4_address: 10.1.42.102
+
+  consul_s3:
+    container_name: consul_s3
+    image: consul
+    command: "agent -config-file=/consul/config/consul_s3.json"
+    volumes:
+      - ./consul_server/consul_s3.json:/consul/config/consul_s3.json
+      - ./consul_server/data_s3:/consul/data
+    networks:
+      consul_network:
+        ipv4_address: 10.1.42.103
+
+  # Consul Agents used by Vault
+  consul_c1:
+    container_name: consul_c1
+    image: consul
+    command: "agent -config-file=/consul/config/consul_c1.json"
+    volumes:
+      - ./consul_client/consul_c1.json:/consul/config/consul_c1.json
+      - ./consul_client/data_c1:/consul/data
+    networks:
+      consul_network:
+        ipv4_address: 10.1.42.201
+
+  consul_c2:
+    container_name: consul_c2
+    image: consul
+    command: "agent -config-file=/consul/config/consul_c2.json"
+    volumes:
+      - ./consul_client/consul_c2.json:/consul/config/consul_c2.json
+      - ./consul_client/data_c2:/consul/data
+    networks:
+      consul_network:
+        ipv4_address: 10.1.42.202
+
+  # Vault Cluster
+  vault_srv1:
+    container_name: vault_srv1
+    image: vault
+    command: "vault server -config=/vault/config/vault_s1.hcl"
+    volumes:
+      - ./vault_server/vault_s1.hcl:/vault/config/vault_s1.hcl
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_ADDR: "http://127.0.0.1:8200"
+    networks:
+      consul_network:
+        ipv4_address: 10.1.42.211
+    ports:
+      - 8200:8200
+
+  vault_srv2:
+    container_name: vault_srv2
+    image: vault
+    command: "vault server -config=/vault/config/vault_s2.hcl"
+    volumes:
+      - ./vault_server/vault_s2.hcl:/vault/config/vault_s2.hcl
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_ADDR: "http://127.0.0.1:8200"
+    networks:
+      consul_network:
+        ipv4_address: 10.1.42.212
